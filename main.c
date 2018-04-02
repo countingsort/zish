@@ -126,7 +126,7 @@ static char *zish_get_line(void)
         if ((*line++ = c) == '\n')
             break;
     }
-    line[-1] = '\0';
+    *line = '\0';
     return linep;
 }
 
