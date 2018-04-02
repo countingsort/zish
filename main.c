@@ -46,7 +46,7 @@ enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(char **) = {
 
 int main(void)
 {
-    // Load stuff
+    // Init
     srand(time(NULL));
 
     // REPL
@@ -219,7 +219,8 @@ static enum status_code zish_cd(char **args)
 static enum status_code zish_help(char **args)
 {
     printf(
-        "zish is a shell\n\n"
+        "zish is a shell\n"
+        "(c) Niclas Meyer\n\n"
         "Twype the pwogwam name and then pwess enter, onii-chan. (^._.^)~\n"
         "Builtwins:\n"
     );
