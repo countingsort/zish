@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include <unistd.h>
+#include <signal.h>
 #include <sys/wait.h>
 
 #define ZISH_NUM_KAWAII_SMILEYS 6
@@ -31,6 +32,9 @@ static enum status_code zish_cd(char **args);
 static enum status_code zish_help(char **);
 static enum status_code zish_exit(char **);
 
+static void zish_register_interrupt_handler(void);
+static void zish_interrupt_handler(int signo);
+
 #define ZISH_NUM_BUILTINS 3
 static char *builtin_str[ZISH_NUM_BUILTINS] = {
     "cd",
@@ -47,6 +51,8 @@ static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(char **) = {
 int main(void)
 {
     // Init
+    zish_register_interrupt_handler();
+
     srand(time(NULL));
 
     // REPL
@@ -240,5 +246,22 @@ static enum status_code zish_exit(char **args)
 {
     printf("Sayounara, Onii-chan! (._.)\n");
     return STAT_EXIT;
+}
+
+static void zish_register_interrupt_handler(void)
+{
+    if (signal(SIGINT, &zish_interrupt_handler) == SIG_ERR) {
+        perror("zish");
+        exit(EXIT_FAILURE);
+    }
+}
+
+static void zish_interrupt_handler(int signo)
+{
+    if (signo == SIGINT) {
+        printf("\n\033[38;5;057mIf you wanna go, try `exit`, onii-chan.\033[38;5;255m\n");
+    }
+
+    zish_register_interrupt_handler();
 }
 
