@@ -74,6 +74,9 @@ static void zish_repl(void)
 
         // Get input
         line = zish_get_line();
+        if (!line) {
+            perror("zish");
+        }
         args = zish_split_line(line);
 
         status = zish_exec(args);
@@ -131,8 +134,7 @@ static char **zish_split_line(char *line)
     char  *token   = NULL;
 
     if (!tokens) {
-        fprintf(stderr, "zish: allocation error\n");
-        exit(EXIT_FAILURE);
+        perror("zish");
     }
 
     token = strtok(line, ZISH_TOKEN_DELIMS);
