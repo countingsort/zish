@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NUM_KAWAII_SMILEYS 5
-static char *kawaii_smileys[5] = {
+#define NUM_KAWAII_SMILEYS 6
+static char *kawaii_smileys[NUM_KAWAII_SMILEYS] = {
     "(▰˘◡˘▰)",
     "♥‿♥",
     "(✿ ♥‿♥)",
     ".ʕʘ‿ʘʔ.",
+    "◎[▪‿▪]◎",
     "≧◡≦"
 };
 
