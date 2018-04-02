@@ -238,7 +238,7 @@ static enum status_code zish_help(char **args)
 
 static enum status_code zish_exit(char **args)
 {
-    printf("Sayounara, Onii-chan! (^._.^)~\n");
+    printf("Sayounara, Onii-chan! (._.)~\n");
     return STAT_EXIT;
 }
 
