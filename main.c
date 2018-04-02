@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
-#define NUM_KAWAII_SMILEYS 6
-static char *kawaii_smileys[NUM_KAWAII_SMILEYS] = {
+#include <unistd.h>
+#include <sys/wait.h>
+
+#define ZISH_NUM_KAWAII_SMILEYS 6
+static char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
     "(▰˘◡˘▰)",
     "♥‿♥",
     "(✿ ♥‿♥)",
@@ -20,7 +24,25 @@ enum status_code {
 static void zish_repl(void);
 static char *zish_get_line(void);
 static char **zish_split_line(char *line);
-static enum status_code(char **args);
+static enum status_code zish_exec(char **args);
+static enum status_code zish_launch(char **args);
+
+static enum status_code zish_cd(char **args);
+static enum status_code zish_help(char **);
+static enum status_code zish_exit(char **);
+
+#define ZISH_NUM_BUILTINS 3
+char *builtin_str[ZISH_NUM_BUILTINS] = {
+    "cd",
+    "help",
+    "exit"
+};
+
+enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(char **) = {
+    &zish_cd,
+    &zish_help,
+    &zish_exit
+};
 
 int main(void)
 {
@@ -42,7 +64,7 @@ static void zish_repl(void)
     enum status_code status = STAT_NORMAL;
 
     do {
-        int kawaii_smiley_index = rand() % NUM_KAWAII_SMILEYS;
+        int kawaii_smiley_index = rand() % ZISH_NUM_KAWAII_SMILEYS;
 
         // Print prompt
         printf(
@@ -58,8 +80,6 @@ static void zish_repl(void)
 
         free(line);
         free(args);
-
-        getc(stdin);
     } while (status != STAT_EXIT);
 }
 
@@ -68,7 +88,7 @@ static char *zish_get_line(void)
 {
     char  *line   = malloc(ZISH_LINE_BUFSIZE);
     char  *linep  = line;
-    size_t lenmax = ALLOC_SIZE;
+    size_t lenmax = ZISH_LINE_BUFSIZE;
     size_t len    = lenmax;
     int    c;
 
@@ -117,7 +137,7 @@ static char **zish_split_line(char *line)
 
     token = strtok(line, ZISH_TOKEN_DELIMS);
     while (token) {
-        tokens[position] = token;
+        tokens[pos] = token;
         ++pos;
 
         if (pos >= bufsize) {
@@ -138,7 +158,84 @@ static char **zish_split_line(char *line)
     return tokens;
 }
 
-static enum status_code(char **args)
+static enum status_code zish_exec(char **args)
 {
+    if (!args[0]) {
+        // Empty command
+        return STAT_NORMAL;
+    }
+
+    for (size_t i = 0; i < ZISH_NUM_BUILTINS; ++i) {
+        if (strcmp(args[0], builtin_str[i]) == 0) {
+            return (*builtin_func[i])(args);
+        }
+    }
+
+    return zish_launch(args);
+}
+
+static enum status_code zish_launch(char **args)
+{
+    pid_t pid;
+
+    int status;
+
+    pid = fork();
+    if (pid == 0) {
+        // Child process
+        if (execvp(args[0], args) == -1) {
+            fprintf(stderr, "zish: error executing program\n");
+        }
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        // Error forking
+        perror("zish");
+    } else {
+        // Parent process
+        do {
+           waitpid(pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+
+    return STAT_NORMAL;
+}
+
+/*
+  Builtins
+ */
+static enum status_code zish_cd(char **args)
+{
+    if (!args[1]) {
+        fprintf(stderr, "zish: expected argument to `cd`\n");
+    } else {
+        if (chdir(args[1]) != 0) {
+            perror("zish");
+        }
+    }
+
+    return STAT_NORMAL;
+}
+
+static enum status_code zish_help(char **args)
+{
+    printf(
+        "zish is a shell\n\n"
+        "Twype the pwogwam name and then pwess enter, onii-chan. (^._.^)~\n"
+        "Builtwins:\n"
+    );
+
+    for (size_t i = 0; i < ZISH_NUM_BUILTINS; ++i) {
+        printf("  %s\n", builtin_str[i]);
+    }
+
+    printf("Use `man` for more inwos on other pwogwams.\n");
+
+    return STAT_NORMAL;
+}
+
+static enum status_code zish_exit(char **args)
+{
+    printf("Sayounara, Onii-chan! (^._.^)~\n");
+    return STAT_EXIT;
 }
 
