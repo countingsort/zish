@@ -186,7 +186,7 @@ static enum status_code zish_launch(char **args)
     if (pid == 0) {
         // Child process
         if (execvp(args[0], args) == -1) {
-            fprintf(stderr, "zish: error executing program\n");
+            perror("zish");
         }
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
