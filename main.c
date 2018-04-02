@@ -145,7 +145,7 @@ static char **zish_split_line(char *line)
         if (pos >= bufsize) {
             bufsize *= 3;
             bufsize /= 2;
-            tokens = realloc(tokens, bufsize * sizeof(*tokens));
+            tokens   = realloc(tokens, bufsize * sizeof(*tokens));
 
             if (!tokens) {
                 fprintf(stderr, "zish: allocation error\n");
@@ -238,7 +238,7 @@ static enum status_code zish_help(char **args)
 
 static enum status_code zish_exit(char **args)
 {
-    printf("Sayounara, Onii-chan! (._.)~\n");
+    printf("Sayounara, Onii-chan! (._.)\n");
     return STAT_EXIT;
 }
 
