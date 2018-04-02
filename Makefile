@@ -1,7 +1,8 @@
 CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra -pedantic -Wshadow
 CPPFLAGS = -MMD -MF $*.d
-LDLIBS =
+LDLIBS = -lreadline
+OBJS = history_linked_list.o
 
 all: main
 
