@@ -14,3 +14,7 @@ zish is a shell (pronounced with a German z)
 
 Read the code, it's literally better than documentation, since it won't lie.
 
+## License
+
+This project is licesed under the MIT license. Read LICENSE for more infos.
+
