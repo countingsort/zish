@@ -32,13 +32,13 @@ static enum status_code zish_help(char **);
 static enum status_code zish_exit(char **);
 
 #define ZISH_NUM_BUILTINS 3
-char *builtin_str[ZISH_NUM_BUILTINS] = {
+static char *builtin_str[ZISH_NUM_BUILTINS] = {
     "cd",
     "help",
     "exit"
 };
 
-enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(char **) = {
+static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(char **) = {
     &zish_cd,
     &zish_help,
     &zish_exit
