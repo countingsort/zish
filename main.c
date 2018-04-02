@@ -7,6 +7,9 @@
 #include <signal.h>
 #include <sys/wait.h>
 
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #define ZISH_NUM_KAWAII_SMILEYS 6
 static char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
     "(▰˘◡˘▰)",
@@ -23,14 +26,14 @@ enum status_code {
 };
 
 static void zish_repl(void);
-static char *zish_get_line(void);
+// static char *zish_get_line(void);
 static char **zish_split_line(char *line);
 static enum status_code zish_exec(char **args);
 static enum status_code zish_launch(char **args);
 
 static enum status_code zish_cd(char **args);
-static enum status_code zish_help(char **);
-static enum status_code zish_exit(char **);
+static enum status_code zish_help(char **args);
+static enum status_code zish_exit(char **args);
 
 static void zish_register_interrupt_handler(void);
 static void zish_interrupt_handler(int signo);
@@ -51,7 +54,7 @@ static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(char **) = {
 int main(void)
 {
     // Init
-    zish_register_interrupt_handler();
+    // zish_register_interrupt_handler();
 
     srand(time(NULL));
 
@@ -70,19 +73,22 @@ static void zish_repl(void)
     enum status_code status = STAT_NORMAL;
 
     do {
+        // Get input
         int kawaii_smiley_index = rand() % ZISH_NUM_KAWAII_SMILEYS;
+        char prompt[70 + sizeof(kawaii_smileys[kawaii_smiley_index])];
 
-        // Print prompt
-        printf(
+        sprintf(
+            prompt,
             "\033[38;5;057mAwaiting your command, senpai. \033[38;5;197m%s \033[38;5;255m",
             kawaii_smileys[kawaii_smiley_index]
         );
 
-        // Get input
-        line = zish_get_line();
+        line = readline(prompt);
         if (!line) {
             perror("zish");
+            continue;
         }
+
         args = zish_split_line(line);
 
         status = zish_exec(args);
@@ -92,6 +98,7 @@ static void zish_repl(void)
     } while (status != STAT_EXIT);
 }
 
+/*
 #define ZISH_LINE_BUFSIZE 256
 static char *zish_get_line(void)
 {
@@ -108,6 +115,28 @@ static char *zish_get_line(void)
         c = fgetc(stdin);
         if (c == EOF)
             break;
+
+        if (c == '\033' && fgetc(stdin) == '[') {
+            switch(fgetc(stdin)) {
+                case 'A':
+                    // Arrow up
+                    printf("Up\n");
+                    break;
+                case 'B':
+                    // Arrow down
+                    printf("Down\n");
+                    break;
+                case 'C':
+                    // Arrow right
+                    printf("Right\n");
+                    break;
+                case 'D':
+                    // Arrow left
+                    printf("Left\n");
+                    break;
+            }
+            continue;
+        }
 
         if (--len == 0) {
             len = lenmax;
@@ -129,6 +158,7 @@ static char *zish_get_line(void)
     *line = '\0';
     return linep;
 }
+*/
 
 #define ZISH_TOKEN_BUFSIZE 64
 #define ZISH_TOKEN_DELIMS " \t\n\r"
@@ -154,7 +184,7 @@ static char **zish_split_line(char *line)
             tokens   = realloc(tokens, bufsize * sizeof(*tokens));
 
             if (!tokens) {
-                fprintf(stderr, "zish: allocation error\n");
+                perror("zish");
                 exit(EXIT_FAILURE);
             }
         }
