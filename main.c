@@ -33,7 +33,6 @@ enum status_code {
 };
 
 static void zish_repl(void);
-// static char *zish_get_line(void);
 static char **zish_split_line(char *line);
 static enum status_code zish_exec(char **args);
 static enum status_code zish_launch(char **args);
@@ -124,68 +123,6 @@ static void zish_repl(void)
         free(args);
     } while (status != STAT_EXIT);
 }
-
-/*
-#define ZISH_LINE_BUFSIZE 256
-static char *zish_get_line(void)
-{
-    char  *line   = malloc(ZISH_LINE_BUFSIZE);
-    char  *linep  = line;
-    size_t lenmax = ZISH_LINE_BUFSIZE;
-    size_t len    = lenmax;
-    int    c;
-
-    if (!line)
-        return NULL;
-
-    for (;;) {
-        c = fgetc(stdin);
-        if (c == EOF)
-            break;
-
-        if (c == '\033' && fgetc(stdin) == '[') {
-            switch(fgetc(stdin)) {
-                case 'A':
-                    // Arrow up
-                    printf("Up\n");
-                    break;
-                case 'B':
-                    // Arrow down
-                    printf("Down\n");
-                    break;
-                case 'C':
-                    // Arrow right
-                    printf("Right\n");
-                    break;
-                case 'D':
-                    // Arrow left
-                    printf("Left\n");
-                    break;
-            }
-            continue;
-        }
-
-        if (--len == 0) {
-            len = lenmax;
-            lenmax *= 3;
-            lenmax /= 2;
-            char *linen = realloc(linep, lenmax);
-
-            if (!linen) {
-                free(linep);
-                return NULL;
-            }
-            line  = linen + (line - linep);
-            linep = linen;
-        }
-
-        if ((*line++ = c) == '\n')
-            break;
-    }
-    *line = '\0';
-    return linep;
-}
-*/
 
 #define ZISH_TOKEN_BUFSIZE 64
 #define ZISH_TOKEN_DELIMS " \t\n\r"
@@ -327,6 +264,9 @@ static void zish_interrupt_handler(int signo)
 {
     if (signo == SIGINT) {
         printf("\n\033[38;5;57mIf you wanna go, try `exit`, onii-chan.\033[38;5;255m\n");
+        rl_on_new_line();
+        rl_replace_line("", 0);
+        rl_redisplay();
     }
 
     zish_register_interrupt_handler();
