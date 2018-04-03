@@ -4,15 +4,18 @@
 #include <time.h>
 
 #include <fcntl.h>
+#include <pwd.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
 
-static const char *history_file = "~/.zish_history";
+static const char *history_file = ".zish_history";
+static char *history_full_path  = NULL;
 
 #define ZISH_NUM_KAWAII_SMILEYS 6
 static char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
@@ -60,10 +63,22 @@ static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(char **) = {
 int main(void)
 {
     // Init
-    // zish_register_interrupt_handler();
+    zish_register_interrupt_handler();
 
-    zish_touch(history_file);
-    read_history(history_file);
+    {
+        struct passwd *pw = getpwuid(getuid());
+        int path_size = strlen(pw->pw_dir);
+        path_size += strlen(history_file);
+
+        history_full_path = malloc((path_size + 2) * sizeof(*history_full_path));
+
+        strcpy(history_full_path, pw->pw_dir);
+        strcat(history_full_path, "/");
+        strcat(history_full_path, history_file);
+    }
+
+    zish_touch(history_full_path);
+    read_history(history_full_path);
 
     srand(time(NULL));
 
@@ -71,6 +86,7 @@ int main(void)
     zish_repl();
 
     // Cleanup
+    free(history_full_path);
 
     return EXIT_SUCCESS;
 }
@@ -98,7 +114,7 @@ static void zish_repl(void)
         }
 
         add_history(line);
-        write_history(history_file);
+        write_history(history_full_path);
 
         args = zish_split_line(line);
 
