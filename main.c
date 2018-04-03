@@ -3,12 +3,16 @@
 #include <string.h>
 #include <time.h>
 
+#include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
+
+static const char *history_file = "~/.zish_history";
 
 #define ZISH_NUM_KAWAII_SMILEYS 6
 static char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
@@ -30,6 +34,8 @@ static void zish_repl(void);
 static char **zish_split_line(char *line);
 static enum status_code zish_exec(char **args);
 static enum status_code zish_launch(char **args);
+
+static void zish_touch(const char *path);
 
 static enum status_code zish_cd(char **args);
 static enum status_code zish_help(char **args);
@@ -56,6 +62,9 @@ int main(void)
     // Init
     // zish_register_interrupt_handler();
 
+    zish_touch(history_file);
+    read_history(history_file);
+
     srand(time(NULL));
 
     // REPL
@@ -79,15 +88,17 @@ static void zish_repl(void)
 
         sprintf(
             prompt,
-            "\033[38;5;057mAwaiting your command, senpai. \033[38;5;197m%s \033[38;5;255m",
+            "\033[38;5;57mAwaiting your command, senpai. \033[38;5;197m%s \033[38;5;255m",
             kawaii_smileys[kawaii_smiley_index]
         );
 
         line = readline(prompt);
-        if (!line) {
-            perror("zish");
+        if (!line || strlen(line) == 0) {
             continue;
         }
+
+        add_history(line);
+        write_history(history_file);
 
         args = zish_split_line(line);
 
@@ -238,6 +249,16 @@ static enum status_code zish_launch(char **args)
     return STAT_NORMAL;
 }
 
+static void zish_touch(const char *path)
+{
+    int fd = open(path, O_RDWR | O_CREAT | O_NONBLOCK | O_NOCTTY, 0666);
+    if (fd < 0) {
+        fprintf(stderr, "Can't open history file.\n");
+        exit(EXIT_FAILURE);
+    }
+    close(fd);
+}
+
 /*
   Builtins
  */
@@ -289,7 +310,7 @@ static void zish_register_interrupt_handler(void)
 static void zish_interrupt_handler(int signo)
 {
     if (signo == SIGINT) {
-        printf("\n\033[38;5;057mIf you wanna go, try `exit`, onii-chan.\033[38;5;255m\n");
+        printf("\n\033[38;5;57mIf you wanna go, try `exit`, onii-chan.\033[38;5;255m\n");
     }
 
     zish_register_interrupt_handler();
