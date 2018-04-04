@@ -8,7 +8,7 @@ zish is a shell (pronounced with a German z)
 
 ## Dependencies
 
-`gcc`, `make`
+`gcc`, `make`, `GNU readline`
 
 ## How to use it
 
