@@ -23,7 +23,8 @@ struct alias {
 };
 
 enum status_code {
-    STAT_NORMAL,
+    STAT_SUCCESS,
+    STAT_FAILURE,
     STAT_EXIT
 };
 
@@ -31,18 +32,18 @@ static void zish_initialize(void);
 static void zish_cleanup(void);
 static void zish_repl(void);
 
-static char **zish_split_line(char *line);
+static char **zish_split_line(char *line, int *num_args);
 static char *zish_linetok(char *line);
 static void *zish_rawmemchr(const void *s, char c);
-static enum status_code zish_exec(char **args);
+static enum status_code zish_exec(char **args, int num_args);
 static enum status_code zish_launch(char **args);
 
 static void zish_touch(const char *path);
 
-static enum status_code zish_cd(char **args);
-static enum status_code zish_help(char **args);
-static enum status_code zish_exit(char **args);
-static enum status_code zish_define_alias(char **args);
+static enum status_code zish_cd(int argc, char **argv);
+static enum status_code zish_help(int argc, char **argv);
+static enum status_code zish_exit(int argc, char **argv);
+static enum status_code zish_define_alias(int argc, char **argv);
 
 static void zish_register_interrupt_handler(void);
 static void zish_interrupt_handler(int signo);
@@ -72,7 +73,7 @@ static char *builtin_str[ZISH_NUM_BUILTINS] = {
     "alias"
 };
 
-static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(char **) = {
+static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(int, char **) = {
     &zish_cd,
     &zish_help,
     &zish_exit,
@@ -128,18 +129,22 @@ static void zish_repl(void)
 {
     char  *line = NULL;
     char **args = NULL;
-    enum status_code status = STAT_NORMAL;
+    enum status_code status = STAT_SUCCESS;
 
     do {
         // Get input
         int kawaii_smiley_index = rand() % ZISH_NUM_KAWAII_SMILEYS;
         char prompt[70 + sizeof(kawaii_smileys[kawaii_smiley_index])];
 
-        sprintf(
-            prompt,
-            "\033[38;5;12mAwaiting your command, senpai. \033[38;5;13m%s \033[0m",
-            kawaii_smileys[kawaii_smiley_index]
-        );
+        if (status == STAT_SUCCESS) {
+            sprintf(
+                prompt,
+                "\033[38;5;12mAwaiting your command, senpai. \033[38;5;13m%s \033[0m",
+                kawaii_smileys[kawaii_smiley_index]
+            );
+        } else {
+            strcpy(prompt, "\033[38;5;13mSomethwing went wwong... \033[0m");
+        }
 
         line = readline(prompt);
         if (!line || strlen(line) == 0) {
@@ -149,9 +154,10 @@ static void zish_repl(void)
         add_history(line);
         write_history(history_full_path);
 
-        args = zish_split_line(line);
+        int num_args;
+        args = zish_split_line(line, &num_args);
 
-        status = zish_exec(args);
+        status = zish_exec(args, num_args);
 
         free(line);
         free(args);
@@ -159,7 +165,7 @@ static void zish_repl(void)
 }
 
 #define ZISH_TOKEN_BUFSIZE 64
-static char **zish_split_line(char *line)
+static char **zish_split_line(char *line, int *num_args)
 {
     int    bufsize = ZISH_TOKEN_BUFSIZE;
     int    pos     = 0;
@@ -189,6 +195,7 @@ static char **zish_split_line(char *line)
         token = zish_linetok(NULL);
     }
 
+    *num_args = pos;
     tokens[pos] = NULL;
     return tokens;
 }
@@ -230,13 +237,8 @@ static void *zish_rawmemchr(const void *s, char c)
     return (void*)str;
 }
 
-static enum status_code zish_exec(char **args)
+static enum status_code zish_exec(char **args, int num_args)
 {
-    if (!args[0]) {
-        // Empty command
-        return STAT_NORMAL;
-    }
-
     for (size_t i = 0; aliases[i]; ++i) {
         if (strcmp(args[0], aliases[i]->name) == 0) {
             args[0] = aliases[i]->command;
@@ -245,7 +247,7 @@ static enum status_code zish_exec(char **args)
 
     for (size_t i = 0; i < ZISH_NUM_BUILTINS; ++i) {
         if (strcmp(args[0], builtin_str[i]) == 0) {
-            return (*builtin_func[i])(args);
+            return (*builtin_func[i])(num_args, args);
         }
     }
 
@@ -275,7 +277,11 @@ static enum status_code zish_launch(char **args)
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     }
 
-    return STAT_NORMAL;
+    if (status) {
+        return STAT_FAILURE;
+    } else {
+        return STAT_SUCCESS;
+    }
 }
 
 static void zish_touch(const char *path)
@@ -291,22 +297,24 @@ static void zish_touch(const char *path)
 /*
   Builtins
  */
-static enum status_code zish_cd(char **args)
+static enum status_code zish_cd(int argc, char **argv)
 {
-    if (!args[1]) {
+    if (argc < 2) {
         fprintf(stderr, "zish: expected argument to `cd`\n");
-    } else {
-        if (chdir(args[1]) != 0) {
-            perror("zish");
-        }
+        return STAT_FAILURE;
     }
 
-    return STAT_NORMAL;
+    if (chdir(argv[1]) != 0) {
+        perror("zish");
+    }
+
+    return STAT_SUCCESS;
 }
 
-static enum status_code zish_help(char **args)
+static enum status_code zish_help(int argc, char **argv)
 {
-    (void)args;
+    (void)argc;
+    (void)argv;
 
     printf(
         "zish is a shell\n"
@@ -321,27 +329,34 @@ static enum status_code zish_help(char **args)
 
     printf("Use `man` for more inwos on other pwogwams.\n");
 
-    return STAT_NORMAL;
+    return STAT_SUCCESS;
 }
 
-static enum status_code zish_exit(char **args)
+static enum status_code zish_exit(int argc, char **argv)
 {
-    (void)args;
+    (void)argc;
+    (void)argv;
 
     printf("Sayounara, Onii-chan! (._.)\n");
     return STAT_EXIT;
 }
 
-static enum status_code zish_define_alias(char **args)
+static enum status_code zish_define_alias(int argc, char **argv)
 {
+    if (argc < 3) {
+        fprintf(stderr, "zish: expected 2 arguments to `alias`\n");
+
+        return STAT_FAILURE;
+    }
+
     struct alias *new_alias = malloc(sizeof(*new_alias));
     if (!new_alias) {
         perror("zish");
         exit(EXIT_FAILURE);
     }
 
-    new_alias->name    = strdup(args[1]);
-    new_alias->command = strdup(args[2]);
+    new_alias->name    = strdup(argv[1]);
+    new_alias->command = strdup(argv[2]);
 
     size_t i = 0;
     while (aliases[i]) {
@@ -357,7 +372,7 @@ static enum status_code zish_define_alias(char **args)
     aliases[i]   = new_alias;
     aliases[i+1] = NULL;
 
-    return STAT_NORMAL;
+    return STAT_SUCCESS;
 }
 
 static void zish_register_interrupt_handler(void)
