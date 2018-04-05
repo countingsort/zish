@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,17 +15,11 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-static const char *history_file = ".zish_history";
-static char *history_full_path  = NULL;
+extern char *strdup(const char *s);
 
-#define ZISH_NUM_KAWAII_SMILEYS 6
-static char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
-    "(▰˘◡˘▰)",
-    "♥‿♥",
-    "(✿ ♥‿♥)",
-    ".ʕʘ‿ʘʔ.",
-    "◎[▪‿▪]◎",
-    "≧◡≦"
+struct alias {
+    char *name;
+    char *command;
 };
 
 enum status_code {
@@ -32,8 +27,13 @@ enum status_code {
     STAT_EXIT
 };
 
+static void zish_initialize(void);
+static void zish_cleanup(void);
 static void zish_repl(void);
+
 static char **zish_split_line(char *line);
+static char *zish_linetok(char *line);
+static void *zish_rawmemchr(const void *s, char c);
 static enum status_code zish_exec(char **args);
 static enum status_code zish_launch(char **args);
 
@@ -42,52 +42,86 @@ static void zish_touch(const char *path);
 static enum status_code zish_cd(char **args);
 static enum status_code zish_help(char **args);
 static enum status_code zish_exit(char **args);
+static enum status_code zish_define_alias(char **args);
 
 static void zish_register_interrupt_handler(void);
 static void zish_interrupt_handler(int signo);
 
-#define ZISH_NUM_BUILTINS 3
+static const char *history_file = ".zish_history";
+static char *history_full_path  = NULL;
+
+// static const char *config_file = ".zishrc";
+
+#define ZISH_NUM_KAWAII_SMILEYS 6
+static const char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
+    "(▰˘◡˘▰)",
+    "♥‿♥",
+    "(✿ ♥‿♥)",
+    ".ʕʘ‿ʘʔ.",
+    "◎[▪‿▪]◎",
+    "≧◡≦"
+};
+
+static struct alias **aliases = NULL;
+
+#define ZISH_NUM_BUILTINS 4
 static char *builtin_str[ZISH_NUM_BUILTINS] = {
     "cd",
     "help",
-    "exit"
+    "exit",
+    "alias"
 };
 
 static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(char **) = {
     &zish_cd,
     &zish_help,
-    &zish_exit
+    &zish_exit,
+    &zish_define_alias
 };
 
 int main(void)
 {
-    // Init
+    zish_initialize();
+
+    zish_repl();
+
+    zish_cleanup();
+
+    return EXIT_SUCCESS;
+}
+
+static void zish_initialize(void)
+{
     zish_register_interrupt_handler();
 
-    {
-        struct passwd *pw = getpwuid(getuid());
-        int path_size = strlen(pw->pw_dir);
-        path_size += strlen(history_file);
+    struct passwd *pw = getpwuid(getuid());
+    int home_path_size = strlen(pw->pw_dir);
 
-        history_full_path = malloc((path_size + 2) * sizeof(*history_full_path));
+    history_full_path = malloc((home_path_size + strlen(history_file) + 2) * sizeof(*history_full_path));
 
-        strcpy(history_full_path, pw->pw_dir);
-        strcat(history_full_path, "/");
-        strcat(history_full_path, history_file);
-    }
+    strcpy(history_full_path, pw->pw_dir);
+    strcat(history_full_path, "/");
+    strcat(history_full_path, history_file);
 
     zish_touch(history_full_path);
     read_history(history_full_path);
 
     srand(time(NULL));
 
-    // REPL
-    zish_repl();
+    aliases = calloc(1, sizeof(struct alias));
+}
 
-    // Cleanup
+static void zish_cleanup(void)
+{
     free(history_full_path);
 
-    return EXIT_SUCCESS;
+    for (size_t i = 0; aliases[i]; ++i) {
+        free(aliases[i]->name);
+        free(aliases[i]->command);
+        free(aliases[i]);
+    }
+
+    free(aliases);
 }
 
 static void zish_repl(void)
@@ -103,7 +137,7 @@ static void zish_repl(void)
 
         sprintf(
             prompt,
-            "\033[38;5;57mAwaiting your command, senpai. \033[38;5;197m%s \033[38;5;255m",
+            "\033[38;5;12mAwaiting your command, senpai. \033[38;5;13m%s \033[0m",
             kawaii_smileys[kawaii_smiley_index]
         );
 
@@ -125,7 +159,6 @@ static void zish_repl(void)
 }
 
 #define ZISH_TOKEN_BUFSIZE 64
-#define ZISH_TOKEN_DELIMS " \t\n\r"
 static char **zish_split_line(char *line)
 {
     int    bufsize = ZISH_TOKEN_BUFSIZE;
@@ -137,7 +170,7 @@ static char **zish_split_line(char *line)
         perror("zish");
     }
 
-    token = strtok(line, ZISH_TOKEN_DELIMS);
+    token = zish_linetok(line);
     while (token) {
         tokens[pos] = token;
         ++pos;
@@ -153,11 +186,48 @@ static char **zish_split_line(char *line)
             }
         }
 
-        token = strtok(NULL, ZISH_TOKEN_DELIMS);
+        token = zish_linetok(NULL);
     }
 
     tokens[pos] = NULL;
     return tokens;
+}
+
+#define ZISH_TOKEN_DELIMS " \t\n"
+static char *zish_linetok(char *line)
+{
+    static char *old_line;
+    char *token;
+
+    if (line == NULL) {
+        line = old_line;
+    }
+
+    line += strspn(line, ZISH_TOKEN_DELIMS);
+    if (*line == '\0') {
+        old_line = line;
+        return NULL;
+    }
+
+    token = line;
+    line = strpbrk(token, ZISH_TOKEN_DELIMS);
+    if (line == NULL) {
+        old_line = zish_rawmemchr(token, '\0');
+    } else {
+        *line = '\0';
+        old_line = line + 1;
+    }
+    return token;
+}
+
+static void *zish_rawmemchr(const void *s, char c)
+{
+    const char *str = s;
+    while (*str != c) {
+        ++str;
+    }
+
+    return (void*)str;
 }
 
 static enum status_code zish_exec(char **args)
@@ -165,6 +235,12 @@ static enum status_code zish_exec(char **args)
     if (!args[0]) {
         // Empty command
         return STAT_NORMAL;
+    }
+
+    for (size_t i = 0; aliases[i]; ++i) {
+        if (strcmp(args[0], aliases[i]->name) == 0) {
+            args[0] = aliases[i]->command;
+        }
     }
 
     for (size_t i = 0; i < ZISH_NUM_BUILTINS; ++i) {
@@ -230,6 +306,8 @@ static enum status_code zish_cd(char **args)
 
 static enum status_code zish_help(char **args)
 {
+    (void)args;
+
     printf(
         "zish is a shell\n"
         "(c) Niclas Meyer\n\n"
@@ -248,8 +326,38 @@ static enum status_code zish_help(char **args)
 
 static enum status_code zish_exit(char **args)
 {
+    (void)args;
+
     printf("Sayounara, Onii-chan! (._.)\n");
     return STAT_EXIT;
+}
+
+static enum status_code zish_define_alias(char **args)
+{
+    struct alias *new_alias = malloc(sizeof(*new_alias));
+    if (!new_alias) {
+        perror("zish");
+        exit(EXIT_FAILURE);
+    }
+
+    new_alias->name    = strdup(args[1]);
+    new_alias->command = strdup(args[2]);
+
+    size_t i = 0;
+    while (aliases[i]) {
+        ++i;
+    }
+
+    aliases = realloc(aliases, (i + 2) * sizeof(struct alias));
+    if (!aliases) {
+        perror("zish");
+        exit(EXIT_FAILURE);
+    }
+
+    aliases[i]   = new_alias;
+    aliases[i+1] = NULL;
+
+    return STAT_NORMAL;
 }
 
 static void zish_register_interrupt_handler(void)
@@ -263,7 +371,7 @@ static void zish_register_interrupt_handler(void)
 static void zish_interrupt_handler(int signo)
 {
     if (signo == SIGINT) {
-        printf("\n\033[38;5;57mIf you wanna go, try `exit`, onii-chan.\033[38;5;255m\n");
+        printf("\n\033[38;5;12mIf you wanna go, try `exit`, onii-chan.\033[38;5;0m\n");
         rl_on_new_line();
         rl_replace_line("", 0);
         rl_redisplay();
