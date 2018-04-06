@@ -614,12 +614,38 @@ static enum status_code zish_define_alias(int argc, char **argv)
 
 static enum status_code zish_assign_variable(int argc, char **argv)
 {
-    if (argc < 2) {
+    if (argc < 3) {
         fprintf(stderr, "zish: expected 2 arguments to `let`\n");
+
         return STAT_FAILURE;
     }
 
-    printf("%s is now %s (not really).\n", argv[1], argv[2]);
+    size_t i = 0;
+    while (variables[i]) {
+        if (strcmp(argv[1], variables[i]->name) == 0) {
+            variables[i]->value = strdup(argv[2]);
+            return STAT_SUCCESS;
+        }
+        ++i;
+    }
+
+    struct variable *new_variable = malloc(sizeof(*new_variable));
+    if (!new_variable) {
+        perror("zish");
+        return STAT_FAILURE;
+    }
+
+    new_variable->name  = strdup(argv[1]);
+    new_variable->value = strdup(argv[2]);
+
+    variables = realloc(variables, (i + 2) * sizeof(*variables));
+    if (!variables) {
+        perror("zish");
+        exit(EXIT_FAILURE);
+    }
+
+    variables[i]   = new_variable;
+    variables[i+1] = NULL;
 
     return STAT_SUCCESS;
 }
