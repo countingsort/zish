@@ -237,7 +237,7 @@ static void zish_initialize(void)
 
     srand(time(NULL));
 
-    aliases = calloc(1, sizeof(struct alias));
+    aliases = calloc(1, sizeof(struct alias*));
 
     zish_touch(config_full_path);
     zish_load_config(config_full_path);
