@@ -48,6 +48,7 @@ static enum status_code zish_cd(int argc, char **argv);
 static enum status_code zish_help(int argc, char **argv);
 static enum status_code zish_exit(int argc, char **argv);
 static enum status_code zish_define_alias(int argc, char **argv);
+static enum status_code zish_assign_variable(int argc, char **argv);
 
 static void zish_register_interrupt_handler(void);
 static void zish_interrupt_handler(int signo);
@@ -69,19 +70,21 @@ static const char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
 
 static struct alias **aliases = NULL;
 
-#define ZISH_NUM_BUILTINS 4
+#define ZISH_NUM_BUILTINS 5
 static char *builtin_str[ZISH_NUM_BUILTINS] = {
     "cd",
     "help",
     "exit",
-    "alias"
+    "alias",
+    "let"
 };
 
 static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(int, char **) = {
     &zish_cd,
     &zish_help,
     &zish_exit,
-    &zish_define_alias
+    &zish_define_alias,
+    &zish_assign_variable
 };
 
 int main(void)
@@ -376,7 +379,7 @@ static void zish_touch(const char *path)
 {
     int fd = open(path, O_RDWR | O_CREAT | O_NONBLOCK | O_NOCTTY, 0666);
     if (fd < 0) {
-        fprintf(stderr, "Can't open history file.\n");
+        fprintf(stderr, "zish: Can't open history file.\n");
         exit(EXIT_FAILURE);
     }
     close(fd);
@@ -463,6 +466,18 @@ static enum status_code zish_define_alias(int argc, char **argv)
 
     aliases[i]   = new_alias;
     aliases[i+1] = NULL;
+
+    return STAT_SUCCESS;
+}
+
+static enum status_code zish_assign_variable(int argc, char **argv)
+{
+    if (argc < 2) {
+        fprintf(stderr, "zish: expected 2 arguments to `let`\n");
+        return STAT_FAILURE;
+    }
+
+    printf("%s is now %s (not really).\n", argv[1], argv[2]);
 
     return STAT_SUCCESS;
 }
