@@ -190,6 +190,11 @@ static const char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
 static struct alias **aliases = NULL;
 
 /**
+* NULL terminated list of variables
+*/
+static struct variable **variables = NULL;
+
+/**
 * Builtin command names
 */
 #define ZISH_NUM_BUILTINS 5
@@ -245,7 +250,8 @@ static void zish_initialize(void)
 
     srand(time(NULL));
 
-    aliases = calloc(1, sizeof(struct alias*));
+    aliases   = calloc(1, sizeof(*aliases));
+    variables = calloc(1, sizeof(*variables));
 
     if (access(config_full_path, F_OK) != -1) {
         zish_load_config(config_full_path);
@@ -260,9 +266,18 @@ static void zish_cleanup(void)
         free(aliases[i]->name);
         free(aliases[i]->command);
         free(aliases[i]);
+
     }
 
     free(aliases);
+
+    for (size_t i = 0; variables[i]; ++i) {
+        free(variables[i]->name);
+        free(variables[i]->value);
+        free(variables[i]);
+    }
+
+    free(variables);
 }
 
 static void zish_repl(void)
