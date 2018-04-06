@@ -281,7 +281,8 @@ static void zish_repl(void)
         if (!line || strlen(line) == 0)
             continue;
 
-        add_history(line);
+        if (!isspace(line[0]))
+            add_history(line);
         write_history(history_full_path);
 
         int num_args;
