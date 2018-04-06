@@ -532,12 +532,15 @@ static void zish_touch(const char *path)
  */
 static enum status_code zish_cd(int argc, char **argv)
 {
+    char *dir = NULL;
     if (argc < 2) {
-        fprintf(stderr, "zish: expected argument to `cd`\n");
-        return STAT_FAILURE;
+        struct passwd *pw = getpwuid(getuid());
+        dir = pw->pw_dir;
+    } else {
+        dir = argv[1];
     }
 
-    if (chdir(argv[1]) != 0) {
+    if (chdir(dir) != 0) {
         perror("zish");
     }
 
