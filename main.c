@@ -18,46 +18,154 @@
 // Somehow not included in string.h
 extern char *strdup(const char *s);
 
+/**
+* Contains an alias and the the comment associated with it
+*/
 struct alias {
     char *name;
     char *command;
 };
 
+/**
+* Status of the last command
+*/
 enum status_code {
     STAT_SUCCESS,
     STAT_FAILURE,
     STAT_EXIT
 };
 
+/**
+* Initializes everything needed
+*/
 static void zish_initialize(void);
+
+/**
+* Uninitializes everthing not needed anymore
+*/
 static void zish_cleanup(void);
+
+/**
+* The actual loop
+*/
 static void zish_repl(void);
 
+/**
+* Get a line from a file
+*
+* @returns owning pointer to the line
+*/
 static char *zish_getline(FILE *file);
+
+/**
+* Loads a config file, basically executing it line by line
+*/
 static void zish_load_config(const char *path);
 
+/**
+* Splits a line into different arguments
+*
+* @returns pointer to the char* array
+*/
 static char **zish_split_line(char *line, int *num_args);
+
+/**
+* Returns the next token in the line, similar to strtok
+*
+* @returns the next token
+*/
 static char *zish_linetok(char *line);
+
+/**
+* Own implementation of rawmemchr
+*
+* @returns pointer to the first occurance of c
+*/
 static void *zish_rawmemchr(const void *s, char c);
+
+/**
+* Execute a given command
+*
+* @returns status of the command
+*/
 static enum status_code zish_exec(char **args, int num_args);
+
+/**
+* Launches a binary
+*
+* @returns status of the command
+*/
 static enum status_code zish_launch(char **args);
 
+/**
+* Touches a given file
+*/
 static void zish_touch(const char *path);
 
+/**
+* Builtin: change into a directory
+*
+* @returns status of the command
+*/
 static enum status_code zish_cd(int argc, char **argv);
+
+/**
+* Builtin: print help
+*
+* @returns status of the command
+*/
 static enum status_code zish_help(int argc, char **argv);
+
+/**
+* Builtin: exit the shell
+*
+* @returns STAT_EXIT
+*/
 static enum status_code zish_exit(int argc, char **argv);
+
+/**
+* Builtin: defines an alias
+*
+* @returns status of the command
+*/
 static enum status_code zish_define_alias(int argc, char **argv);
+
+/**
+* Builtin: assigns a value to a variable
+*
+* @returns status of the command
+*/
 static enum status_code zish_assign_variable(int argc, char **argv);
 
+/**
+* Registers the SIGINT interrupt handler
+*/
 static void zish_register_interrupt_handler(void);
+
+/**
+* The SIGINT interrupt handler.
+* Prompts for the next command and discards everything.
+*/
 static void zish_interrupt_handler(int signo);
 
+/**
+* The name of the history file
+*/
 static const char *history_file = ".zish_history";
+
+/**
+* Full path to the history file
+*/
 static char *history_full_path  = NULL;
 
+/**
+* Name of the config file
+*/
 static const char *config_file = ".zishrc";
 
+/**
+* Array of all kawaii smileys
+*/
 #define ZISH_NUM_KAWAII_SMILEYS 6
 static const char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
     "(▰˘◡˘▰)",
@@ -68,8 +176,14 @@ static const char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
     "≧◡≦"
 };
 
+/**
+* NULL terminated list of aliases
+*/
 static struct alias **aliases = NULL;
 
+/**
+* Builtin command names
+*/
 #define ZISH_NUM_BUILTINS 5
 static char *builtin_str[ZISH_NUM_BUILTINS] = {
     "cd",
@@ -79,6 +193,9 @@ static char *builtin_str[ZISH_NUM_BUILTINS] = {
     "let"
 };
 
+/**
+* Builtin command functions
+*/
 static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(int, char **) = {
     &zish_cd,
     &zish_help,
