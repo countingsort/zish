@@ -27,7 +27,7 @@ struct alias {
 };
 
 /**
-* Status of the last command
+* Status of a command
 */
 enum status_code {
     STAT_SUCCESS,
