@@ -15,6 +15,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+// Somehow not included in string.h
 extern char *strdup(const char *s);
 
 struct alias {
@@ -31,6 +32,9 @@ enum status_code {
 static void zish_initialize(void);
 static void zish_cleanup(void);
 static void zish_repl(void);
+
+static char *zish_getline(FILE *file);
+static void zish_load_config(const char *path);
 
 static char **zish_split_line(char *line, int *num_args);
 static char *zish_linetok(char *line);
@@ -51,7 +55,7 @@ static void zish_interrupt_handler(int signo);
 static const char *history_file = ".zish_history";
 static char *history_full_path  = NULL;
 
-// static const char *config_file = ".zishrc";
+static const char *config_file = ".zishrc";
 
 #define ZISH_NUM_KAWAII_SMILEYS 6
 static const char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
@@ -99,10 +103,14 @@ static void zish_initialize(void)
     int home_path_size = strlen(pw->pw_dir);
 
     history_full_path = malloc((home_path_size + strlen(history_file) + 2) * sizeof(*history_full_path));
-
     strcpy(history_full_path, pw->pw_dir);
     strcat(history_full_path, "/");
     strcat(history_full_path, history_file);
+
+    char *config_full_path = malloc((home_path_size + strlen(history_file) + 2) * sizeof(*config_full_path));
+    strcpy(config_full_path, pw->pw_dir);
+    strcat(config_full_path, "/");
+    strcat(config_full_path, config_file);
 
     zish_touch(history_full_path);
     read_history(history_full_path);
@@ -110,6 +118,9 @@ static void zish_initialize(void)
     srand(time(NULL));
 
     aliases = calloc(1, sizeof(struct alias));
+
+    zish_touch(config_full_path);
+    zish_load_config(config_full_path);
 }
 
 static void zish_cleanup(void)
@@ -143,13 +154,12 @@ static void zish_repl(void)
                 kawaii_smileys[kawaii_smiley_index]
             );
         } else {
-            strcpy(prompt, "\033[38;5;13mSomethwing went wwong... \033[0m");
+            strcpy(prompt, "\033[38;5;13mSomethwing went wrong, gome... \033[0m");
         }
 
         line = readline(prompt);
-        if (!line || strlen(line) == 0) {
+        if (!line || strlen(line) == 0)
             continue;
-        }
 
         add_history(line);
         write_history(history_full_path);
@@ -162,6 +172,84 @@ static void zish_repl(void)
         free(line);
         free(args);
     } while (status != STAT_EXIT);
+}
+
+#define ZISH_LINE_BUFSIZE 256
+static char *zish_getline(FILE *file)
+{
+    char  *line    = malloc(ZISH_LINE_BUFSIZE);
+    char  *linep   = line;
+    size_t lenmax = ZISH_LINE_BUFSIZE;
+    size_t len    = lenmax;
+    int    c;
+
+    if (!line) {
+        return NULL;
+    }
+
+    for (;;) {
+        c = fgetc(file);
+        if (c == EOF) {
+            *line = '\0';
+            return linep;
+        }
+
+        if (--len == 0) {
+            len = lenmax;
+            lenmax *= 3;
+            lenmax /= 2;
+            char *linen = realloc(linep, lenmax);
+
+            if (!linen) {
+                free(linep);
+                return NULL;
+            }
+
+            line  = linen + (line - linep);
+            linep = linen;
+        }
+
+        if ((*line++ = c) == '\n')
+            break;
+    }
+
+    line[-1] = '\0';
+    return linep;
+}
+
+static void zish_load_config(const char *path)
+{
+    char *line   = NULL;
+    char **args  = NULL;
+    enum status_code status = STAT_SUCCESS;
+
+    FILE *config = fopen(path, "r");
+    if (!config) {
+        perror("zish: failed to load config");
+        exit(EXIT_FAILURE);
+    }
+
+    while (!feof(config)) {
+        line = zish_getline(config);
+        if (!line) {
+            perror("zish");
+            exit(EXIT_FAILURE);
+        }
+
+        if (strlen(line) == 0)
+            continue;
+
+        int num_args;
+        args = zish_split_line(line, &num_args);
+
+        status = zish_exec(args, num_args);
+
+        free(line);
+        free(args);
+
+        if (status == STAT_EXIT)
+            return;
+    }
 }
 
 #define ZISH_TOKEN_BUFSIZE 64
@@ -318,7 +406,7 @@ static enum status_code zish_help(int argc, char **argv)
 
     printf(
         "zish is a shell\n"
-        "(c) Niclas Meyer\n\n"
+        "(c) Ahmet Alkan Akarsu and Niclas Meyer\n\n"
         "Twype the pwogwam name and then pwess enter, onii-chan. (^._.^)~\n"
         "Builtwins:\n"
     );
