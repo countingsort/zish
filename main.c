@@ -146,6 +146,13 @@ static enum status_code zish_define_alias(int argc, char **argv);
 static enum status_code zish_assign_variable(int argc, char **argv);
 
 /**
+* Loads the value of a variable
+*
+* @returns non-owning pointer to the value
+*/
+static char *zish_load_variable(const char *name);
+
+/**
 * Registers the SIGINT interrupt handler
 */
 static void zish_register_interrupt_handler(void);
@@ -266,7 +273,6 @@ static void zish_cleanup(void)
         free(aliases[i]->name);
         free(aliases[i]->command);
         free(aliases[i]);
-
     }
 
     free(aliases);
@@ -651,6 +657,17 @@ static enum status_code zish_assign_variable(int argc, char **argv)
     variables[i+1] = NULL;
 
     return STAT_SUCCESS;
+}
+
+static char *zish_load_variable(const char *name)
+{
+    for (size_t i = 0; variables[i]; ++i) {
+        if (strcmp(name, variables[i]->name) == 0) {
+            return variables[i]->value;
+        }
+    }
+
+    return NULL;
 }
 
 static void zish_register_interrupt_handler(void)
