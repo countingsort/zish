@@ -19,11 +19,19 @@
 extern char *strdup(const char *s);
 
 /**
-* Contains an alias and the the comment associated with it
+* Contains an alias and the the commant associated with it
 */
 struct alias {
     char *name;
     char *command;
+};
+
+/**
+* Contains a variable
+*/
+struct variable {
+    char *name;
+    char *value;
 };
 
 /**
