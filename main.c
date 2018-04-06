@@ -146,6 +146,13 @@ static enum status_code zish_define_alias(int argc, char **argv);
 static enum status_code zish_assign_variable(int argc, char **argv);
 
 /**
+* Builtin: source a file
+*
+* @returns status of the command
+*/
+static enum status_code zish_source_file(int argc, char **argv);
+
+/**
 * Loads the value of a variable
 *
 * @returns non-owning pointer to the value
@@ -204,13 +211,14 @@ static struct variable **variables = NULL;
 /**
 * Builtin command names
 */
-#define ZISH_NUM_BUILTINS 5
+#define ZISH_NUM_BUILTINS 6
 static char *builtin_str[ZISH_NUM_BUILTINS] = {
     "cd",
     "help",
     "exit",
     "alias",
-    "let"
+    "let",
+    "source"
 };
 
 /**
@@ -221,7 +229,8 @@ static enum status_code (*builtin_func[ZISH_NUM_BUILTINS])(int, char **) = {
     &zish_help,
     &zish_exit,
     &zish_define_alias,
-    &zish_assign_variable
+    &zish_assign_variable,
+    &zish_source_file
 };
 
 int main(void)
@@ -439,7 +448,8 @@ static char **zish_split_line(char *line, int *num_args)
     return tokens;
 }
 
-#define ZISH_TOKEN_DELIMS " \t\n"
+#define ZISH_WHITESPACE " \t\n"
+#define ZISH_TOKEN_DELIMS ZISH_WHITESPACE "\\"
 static char *zish_linetok(char *line)
 {
     static char *old_line;
@@ -449,21 +459,29 @@ static char *zish_linetok(char *line)
         line = old_line;
     }
 
-    line += strspn(line, ZISH_TOKEN_DELIMS);
+    line += strspn(line, ZISH_WHITESPACE);
     if (*line == '\0') {
         old_line = line;
         return NULL;
     }
 
     token = line;
+    size_t token_chars_skipped = 0;
     line = strpbrk(token, ZISH_TOKEN_DELIMS);
     if (line == NULL) {
         old_line = zish_rawmemchr(token, '\0');
     } else {
-        *line = '\0';
         old_line = line + 1;
+        if (line[0] == '\\' && line[1] == ' ') {
+            *line = ' ';
+            ++line;
+            ++old_line;
+        }
+        *line = '\0';
     }
-    return token;
+
+    //printf("%s.\n", token);
+    return token - token_chars_skipped;
 }
 
 static void *zish_rawmemchr(const void *s, char c)
@@ -668,6 +686,17 @@ static char *zish_load_variable(const char *name)
     }
 
     return NULL;
+}
+
+static enum status_code zish_source_file(int argc, char **argv)
+{
+    if (argc < 2) {
+        fprintf(stderr, "zish: expected an argument to `source`\n");
+        return STAT_FAILURE;
+    }
+
+    zish_load_config(argv[1]);
+    return STAT_SUCCESS;
 }
 
 static void zish_register_interrupt_handler(void)
