@@ -437,19 +437,23 @@ static enum status_code zish_define_alias(int argc, char **argv)
         return STAT_FAILURE;
     }
 
+    size_t i = 0;
+    while (aliases[i]) {
+        if (strcmp(argv[1], aliases[i]->name) == 0) {
+            aliases[i]->command = strdup(argv[2]);
+            return STAT_SUCCESS;
+        }
+        ++i;
+    }
+
     struct alias *new_alias = malloc(sizeof(*new_alias));
     if (!new_alias) {
         perror("zish");
-        exit(EXIT_FAILURE);
+        return STAT_FAILURE;
     }
 
     new_alias->name    = strdup(argv[1]);
     new_alias->command = strdup(argv[2]);
-
-    size_t i = 0;
-    while (aliases[i]) {
-        ++i;
-    }
 
     aliases = realloc(aliases, (i + 2) * sizeof(struct alias));
     if (!aliases) {
