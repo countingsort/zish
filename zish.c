@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,11 +7,11 @@
 
 #include <fcntl.h>
 #include <pwd.h>
-#include <unistd.h>
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -18,20 +19,15 @@
 // Somehow not included in string.h
 extern char *strdup(const char *s);
 
+// Somehow not included in stdlib.h
+extern int setenv(const char *name, const char *value, int replace);
+
 /**
 * Contains an alias and the the commant associated with it
 */
 struct alias {
     char *name;
     char *command;
-};
-
-/**
-* Contains a variable
-*/
-struct variable {
-    char *name;
-    char *value;
 };
 
 /**
@@ -43,8 +39,7 @@ enum status_code {
     STAT_EXIT
 };
 
-/**
-* Initializes everything needed
+/** * Initializes everything needed
 */
 static void zish_initialize(void);
 
@@ -153,13 +148,6 @@ static enum status_code zish_assign_variable(int argc, char **argv);
 static enum status_code zish_source_file(int argc, char **argv);
 
 /**
-* Loads the value of a variable
-*
-* @returns non-owning pointer to the value
-*/
-static char *zish_load_variable(const char *name);
-
-/**
 * Registers the SIGINT interrupt handler
 */
 static void zish_register_interrupt_handler(void);
@@ -204,11 +192,6 @@ static const char *kawaii_smileys[ZISH_NUM_KAWAII_SMILEYS] = {
 static struct alias **aliases = NULL;
 
 /**
-* NULL terminated list of variables
-*/
-static struct variable **variables = NULL;
-
-/**
 * Builtin command names
 */
 #define ZISH_NUM_BUILTINS 6
@@ -248,16 +231,16 @@ static void zish_initialize(void)
 {
     zish_register_interrupt_handler();
 
-    struct passwd *pw = getpwuid(getuid());
-    int home_path_size = strlen(pw->pw_dir);
+    char *home_path = getenv("HOME");
+    int home_path_size = strlen(home_path);
 
     history_full_path = malloc((home_path_size + strlen(history_file) + 2) * sizeof(*history_full_path));
-    strcpy(history_full_path, pw->pw_dir);
+    strcpy(history_full_path, home_path);
     strcat(history_full_path, "/");
     strcat(history_full_path, history_file);
 
     char *config_full_path = malloc((home_path_size + strlen(history_file) + 2) * sizeof(*config_full_path));
-    strcpy(config_full_path, pw->pw_dir);
+    strcpy(config_full_path, home_path);
     strcat(config_full_path, "/");
     strcat(config_full_path, config_file);
 
@@ -267,7 +250,6 @@ static void zish_initialize(void)
     srand(time(NULL));
 
     aliases   = calloc(1, sizeof(*aliases));
-    variables = calloc(1, sizeof(*variables));
 
     if (access(config_full_path, F_OK) != -1) {
         zish_load_config(config_full_path);
@@ -285,14 +267,6 @@ static void zish_cleanup(void)
     }
 
     free(aliases);
-
-    for (size_t i = 0; variables[i]; ++i) {
-        free(variables[i]->name);
-        free(variables[i]->value);
-        free(variables[i]);
-    }
-
-    free(variables);
 }
 
 static void zish_repl(void)
@@ -558,8 +532,7 @@ static enum status_code zish_cd(int argc, char **argv)
 {
     char *dir = NULL;
     if (argc < 2) {
-        struct passwd *pw = getpwuid(getuid());
-        dir = pw->pw_dir;
+        dir = getenv("HOME");
     } else {
         dir = argv[1];
     }
@@ -647,45 +620,12 @@ static enum status_code zish_assign_variable(int argc, char **argv)
         return STAT_FAILURE;
     }
 
-    size_t i = 0;
-    while (variables[i]) {
-        if (strcmp(argv[1], variables[i]->name) == 0) {
-            variables[i]->value = strdup(argv[2]);
-            return STAT_SUCCESS;
-        }
-        ++i;
-    }
-
-    struct variable *new_variable = malloc(sizeof(*new_variable));
-    if (!new_variable) {
-        perror("zish");
+    if (setenv(argv[1], argv[2], true) == -1) {
+        perror("setenv");
         return STAT_FAILURE;
     }
 
-    new_variable->name  = strdup(argv[1]);
-    new_variable->value = strdup(argv[2]);
-
-    variables = realloc(variables, (i + 2) * sizeof(*variables));
-    if (!variables) {
-        perror("zish");
-        exit(EXIT_FAILURE);
-    }
-
-    variables[i]   = new_variable;
-    variables[i+1] = NULL;
-
     return STAT_SUCCESS;
-}
-
-static char *zish_load_variable(const char *name)
-{
-    for (size_t i = 0; variables[i]; ++i) {
-        if (strcmp(name, variables[i]->name) == 0) {
-            return variables[i]->value;
-        }
-    }
-
-    return NULL;
 }
 
 static enum status_code zish_source_file(int argc, char **argv)
