@@ -1,6 +1,8 @@
 #ifndef ALIASES_H
 #define ALIASES_H
 
+#include "execute.h"
+
 /**
  * Contains an alias and the command associated with it
  */
@@ -21,5 +23,5 @@ extern struct alias **aliases;
  */
 extern enum status_code zish_define_alias(int argc, char **argv);
 
-#endif /* ALIASES H */
+#endif /* ALIASES_H */
 
