@@ -238,6 +238,8 @@ static void zish_initialize(void)
     strcat(config_full_path, "/");
     strcat(config_full_path, config_file);
 
+    free(home_path);
+
     zish_touch(history_full_path);
     read_history(history_full_path);
 
@@ -525,7 +527,11 @@ static enum status_code zish_cd(int argc, char **argv)
 
     if (chdir(dir) != 0) {
         perror("zish");
+        free(dir);
+        return STAT_FAILURE;
     }
+
+    free(dir);
 
     return STAT_SUCCESS;
 }
