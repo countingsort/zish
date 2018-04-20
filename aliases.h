@@ -1,5 +1,5 @@
-#ifndef ALIASES H
-#define ALIASES H
+#ifndef ALIASES_H
+#define ALIASES_H
 
 /**
  * Contains an alias and the command associated with it
@@ -12,7 +12,7 @@ struct alias {
 /**
  * NULL terminated list of aliases
  */
-extern struct alias **aliases = NULL;
+extern struct alias **aliases;
 
 /**
  * Builtin: defines an alias
