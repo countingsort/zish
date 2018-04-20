@@ -1,6 +1,6 @@
 # zish
 
-zish is a shell (pronounced with a German z)
+zish is a shell (pronounced [ˈʦɪʃ])
 
 ## Installation
 
