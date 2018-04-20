@@ -2,7 +2,15 @@
 #include <string.h>
 #include <time.h>
 
+/**
+ * Initializes everything needed
+ */
 static void zish_initialize(void);
+
+/**
+ * Unintializes everythin that was needed
+ */
+static void zish_cleanup(void);
 
 int main(void)
 {
@@ -40,5 +48,18 @@ static void zish_initialize(void)
     if (access(config_full_path, F_OK) != -1) {
         zish_load_config(config_full_path);
     }
+}
+
+static void zish_cleanup(void)
+{
+    free(history_full_path);
+
+    for (size_t i = 0; aliases[i]; ++i) {
+        free(aliases[i]->name);
+        free(aliases[i]->command);
+        free(aliases[i]);
+    }
+
+    free(aliases);
 }
 
