@@ -22,3 +22,4 @@ extern struct alias **aliases;
 extern enum status_code zish_define_alias(int argc, char **argv);
 
 #endif /* ALIASES H */
+
