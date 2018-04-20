@@ -1,6 +1,11 @@
+#include "aliases.h"
+#include "execute.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include <unistd.h>
 
 /**
  * Initializes everything needed
