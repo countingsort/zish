@@ -1,9 +1,13 @@
 #include "execute.h"
 
 #include "aliases.h"
+#include "builtins.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -35,6 +39,13 @@ static void *zish_rawmemchr(const void *s, int c);
 * @returns status of the command
 */
 static enum status_code zish_exec(char **args, int num_args);
+
+/**
+* Launches a binary
+*
+* @returns status of the command
+*/
+static enum status_code zish_launch(char **args);
 
 char *history_full_path = NULL;
 
@@ -154,5 +165,35 @@ static enum status_code zish_exec(char **args, int num_args)
     }
 
     return zish_launch(args);
+}
+
+static enum status_code zish_launch(char **args)
+{
+    pid_t pid;
+
+    int status;
+
+    pid = fork();
+    if (pid == 0) {
+        // Child process
+        if (execvp(args[0], args) == -1) {
+            perror("zish");
+        }
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        // Error forking
+        perror("zish");
+    } else {
+        // Parent process
+        do {
+           waitpid(pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+
+    if (status) {
+        return STAT_FAILURE;
+    } else {
+        return STAT_SUCCESS;
+    }
 }
 
