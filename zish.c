@@ -417,7 +417,6 @@ static char **zish_split_line(char *line, int *num_args)
 }
 
 #define ZISH_WHITESPACE " \t\n"
-#define ZISH_TOKEN_DELIMS ZISH_WHITESPACE "\\"
 static char *zish_linetok(char *line)
 {
     static char *old_line;
@@ -434,22 +433,15 @@ static char *zish_linetok(char *line)
     }
 
     token = line;
-    size_t token_chars_skipped = 0;
-    line = strpbrk(token, ZISH_TOKEN_DELIMS);
+    line = strpbrk(token, ZISH_WHITESPACE);
     if (line == NULL) {
         old_line = zish_rawmemchr(token, '\0');
     } else {
         old_line = line + 1;
-        if (line[0] == '\\' && line[1] == ' ') {
-            *line = ' ';
-            ++line;
-            ++old_line;
-        }
         *line = '\0';
     }
 
-    //printf("%s.\n", token);
-    return token - token_chars_skipped;
+    return token;
 }
 
 static void *zish_rawmemchr(const void *s, char c)
