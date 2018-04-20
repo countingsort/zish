@@ -16,12 +16,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-// Somehow not included in string.h
-extern char *strdup(const char *s);
-
-// Somehow not included in stdlib.h
-extern int setenv(const char *name, const char *value, int replace);
-
 /**
 * Contains an alias and the the commant associated with it
 */
