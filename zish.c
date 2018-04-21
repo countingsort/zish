@@ -1,11 +1,18 @@
-#include "aliases.h"
+#include "builtins.h"
+#include "interrupt_handler.h"
 #include "execute.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
+
+#include <readline/readline.h>
+#include <readline/history.h>
 
 /**
  * Initializes everything needed
@@ -16,6 +23,21 @@ static void zish_initialize(void);
  * Unintializes everythin that was needed
  */
 static void zish_cleanup(void);
+
+/**
+ * Touches a file. Kinda sexual
+ */
+static void zish_touch(const char *path);
+
+/**
+ * Name of the file used to save the history
+ */
+static const char *history_file = ".zish_history";
+
+/**
+ * Name of the zishrc
+ */
+static const char *config_file = ".zishrc";
 
 int main(void)
 {
@@ -51,7 +73,11 @@ static void zish_initialize(void)
     aliases = calloc(1, sizeof(*aliases));
 
     if (access(config_full_path, F_OK) != -1) {
-        zish_load_config(config_full_path);
+        char *argv[] = {
+            "let",
+            config_full_path,
+        };
+        zish_source_file(2, argv);
     }
 }
 
@@ -66,5 +92,15 @@ static void zish_cleanup(void)
     }
 
     free(aliases);
+}
+
+static void zish_touch(const char *path)
+{
+    int fd = open(path, O_RDWR | O_CREAT | O_NONBLOCK | O_NOCTTY, 0666);
+    if (fd < 0) {
+        fprintf(stderr, "zish: Can't open history file.\n");
+        exit(EXIT_FAILURE);
+    }
+    close(fd);
 }
 

@@ -38,13 +38,6 @@ static enum status_code zish_exit(int argc, char **argv);
  */
 static enum status_code zish_assign_variable(int argc, char **argv);
 
-/**
- * Builtin: source a file
- *
- * @returns status of the command
- */
-static enum status_code zish_source_file(int argc, char **argv);
-
 char *builtin_str[ZISH_NUM_BUILTINS] = {
     "cd",
     "help",
@@ -62,6 +55,8 @@ builtin_func_t builtin_func[ZISH_NUM_BUILTINS] = {
     &zish_assign_variable,
     &zish_source_file,
 };
+
+struct alias **aliases;
 
 static enum status_code zish_cd(int argc, char **argv)
 {
@@ -168,8 +163,10 @@ static enum status_code zish_assign_variable(int argc, char **argv)
     return STAT_SUCCESS;
 }
 
-static enum status_code zish_source_file(int argc, char **argv)
+enum status_code zish_source_file(int argc, char **argv)
 {
+    (void)argc;
+    (void)argv;
     fprintf(stderr, "zish: source isn't implemented yet\n");
     return EXIT_FAILURE;
 }
