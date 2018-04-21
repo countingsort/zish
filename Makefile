@@ -4,18 +4,18 @@ CPPFLAGS = -MMD -MF $*.d
 LDLIBS = -lreadline
 OBJS =
 
-all: zish
+all: 💩
 
 -include *.d
 
-zish: $(OBJS)
+💩: $(OBJS)
 
 %.d: ;
 
 %.o: %.d
 
 clean:
-	@$(RM) -v $(OBJS) $(OBJS:.o=.d) zish
+	@$(RM) -v $(OBJS) $(OBJS:.o=.d) 💩
 
 .PHONY: all clean
 .PRECIOUS: *.d *.o

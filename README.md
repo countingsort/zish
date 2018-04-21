@@ -1,6 +1,6 @@
-# zish
+# 💩
 
-zish is a shell (pronounced [ˈʦɪʃ])
+💩 is a shell (pronounced [ˈʦɪʃ])
 
 ## Installation
 
