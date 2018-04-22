@@ -71,14 +71,6 @@ static void zish_initialize(void)
     srand(time(NULL));
 
     aliases = calloc(1, sizeof(*aliases));
-
-    if (access(config_full_path, F_OK) != -1) {
-        char *argv[] = {
-            "let",
-            config_full_path,
-        };
-        zish_source_file(2, argv);
-    }
 }
 
 static void zish_cleanup(void)
