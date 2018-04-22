@@ -4,15 +4,23 @@ zish is a shell (pronounced [ˈʦɪʃ])
 
 ## Installation
 
-`make` and then just start it.
+`make` and put it somewhere safe
 
 ## Dependencies
 
-`gcc`, `make`, `GNU readline`
+- C compiler (POSIX compliant)
+- `make` (preferably GNU make)
+- GNU readline
 
 ## How to use it
 
 Read the code, it's literally better than documentation, since it won't lie.
+
+## Contribution
+
+You wanna contribute? That's great. Go ahead.
+
+If you find a bug or have a feature request, it'll also help if you'd open an issue.
 
 ## License
 
