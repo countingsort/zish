@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra -pedantic -Wshadow -D_POSIX_C_SOURCE=200809L
 CPPFLAGS = -MMD -MF $*.d
 LDLIBS = -lreadline
-OBJS =
+OBJS = builtins.o execute.o interrupt_handler.o
 
 all: zish
 
