@@ -59,8 +59,10 @@ void zish_repl(void)
         // Get input
         char *prompt = getenv("PS1");
         line = readline(prompt);
-        if (!line || strlen(line) == 0)
+        if (!line || strlen(line) == 0) {
+            free(line);
             continue;
+        }
 
         if (!isspace(line[0]))
             add_history(line);
