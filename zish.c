@@ -2,6 +2,7 @@
 #include "interrupt_handler.h"
 #include "execute.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +52,10 @@ int main(void)
 static void zish_initialize(void)
 {
     zish_register_interrupt_handler();
+
+    char *prompt = getenv("PS1");
+    if (!prompt)
+        setenv("PS1", "$ ", false);
 
     char *home_path = getenv("HOME");
     int home_path_size = strlen(home_path);
