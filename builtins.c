@@ -134,13 +134,14 @@ enum status_code zish_define_alias(int argc, char **argv)
     new_alias->name    = strdup(argv[1]);
     new_alias->command = strdup(argv[2]);
 
-    struct alias **old_aliases = aliases;
-    aliases = realloc(aliases, (i + 2) * sizeof(struct alias));
+    struct alias **new_aliases = realloc(aliases, (i + 2) * sizeof(struct alias));
     if (!aliases) {
         perror("realloc");
-        aliases = old_aliases;
+        free(new_alias);
         return STAT_FAILURE;
     }
+
+    aliases = new_aliases;
 
     aliases[i]   = new_alias;
     aliases[i+1] = NULL;
