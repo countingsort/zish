@@ -73,6 +73,8 @@ static void zish_initialize(void)
     zish_touch(history_full_path);
     read_history(history_full_path);
 
+    free(config_full_path);
+
     srand(time(NULL));
 
     aliases = calloc(1, sizeof(*aliases));
