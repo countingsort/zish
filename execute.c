@@ -58,8 +58,6 @@ void zish_repl(void)
     do {
         // Get input
         char *prompt = getenv("PS1");
-        // Reset color
-        printf("\033[0m");
         line = readline(prompt);
         if (!line || strlen(line) == 0)
             continue;
