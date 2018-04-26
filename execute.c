@@ -180,11 +180,11 @@ static enum status_code zish_launch(char **args)
         // Child process
         if (execvp(args[0], args) == -1) {
             perror(args[0]);
+            return STAT_FAILURE;
         }
-        exit(EXIT_FAILURE);
     } else if (pid < 0) {
         // Error forking
-        perror("zish");
+        perror("fork");
     } else {
         // Parent process
         do {
