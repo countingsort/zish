@@ -16,7 +16,6 @@ static void zish_interrupt_handler(int signo);
 static void zish_interrupt_handler(int signo)
 {
     if (signo == SIGINT) {
-        printf("\n\033[38;5;12mIf you wanna go, try `exit`, onii-chan.\033[38;5;0m\n");
         rl_on_new_line();
         rl_replace_line("", 0);
         rl_redisplay();
