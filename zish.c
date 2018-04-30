@@ -102,4 +102,3 @@ static void zish_touch(const char *path)
     }
     close(fd);
 }
-

@@ -21,4 +21,3 @@ extern char *history_full_path;
 extern void zish_repl(void);
 
 #endif /* EXECUTE_H */
-

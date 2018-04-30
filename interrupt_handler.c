@@ -31,4 +31,3 @@ void zish_register_interrupt_handler(void)
         exit(EXIT_FAILURE);
     }
 }
-

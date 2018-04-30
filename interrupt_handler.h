@@ -11,4 +11,3 @@ void zish_register_interrupt_handler(void);
 extern sigjmp_buf ctrlc_buf;
 
 #endif /* INTERRUPT_HANDLER_H */
-

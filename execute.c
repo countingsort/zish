@@ -202,4 +202,3 @@ static enum status_code zish_launch(char **args)
         return STAT_SUCCESS;
     }
 }
-

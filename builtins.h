@@ -49,4 +49,3 @@ extern enum status_code zish_define_alias(int argc, char **argv);
 enum status_code zish_source_file(int argc, char **argv);
 
 #endif /* BUILTINS_H */
-

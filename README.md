@@ -27,4 +27,3 @@ If you find a bug or have a feature request, it'll also help if you'd open an is
 ~~This projct is licesed under the MIT license. Read LICENSE for more infos.~~
 
 This projct is licesed under the GPLv3 license. Read LICENSE for more infos.
-

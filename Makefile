@@ -19,4 +19,3 @@ clean:
 
 .PHONY: all clean
 .PRECIOUS: *.d *.o
-
