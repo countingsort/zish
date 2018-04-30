@@ -2,6 +2,7 @@
 
 #include "aliases.h"
 #include "builtins.h"
+#include "interrupt_handler.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,6 +56,8 @@ void zish_repl(void)
     char **args = NULL;
     enum status_code status = STAT_SUCCESS;
 
+    while (sigsetjmp(ctrlc_buf, 1) !=  0);
+
     do {
         // Get input
         char *prompt = getenv("PS1");
@@ -67,6 +70,7 @@ void zish_repl(void)
         if (!isspace(line[0]))
             add_history(line);
         write_history(history_full_path);
+
 
         int num_args;
         args = zish_split_line(line, &num_args);

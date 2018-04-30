@@ -1,5 +1,6 @@
 #include "interrupt_handler.h"
 
+#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -13,15 +14,14 @@
 */
 static void zish_interrupt_handler(int signo);
 
+sigjmp_buf ctrlc_buf;
+
 static void zish_interrupt_handler(int signo)
 {
-    if (signo == SIGINT) {
-        rl_on_new_line();
-        rl_replace_line("", 0);
-        rl_redisplay();
-    }
-
     zish_register_interrupt_handler();
+    if (signo == SIGINT) {
+	siglongjmp(ctrlc_buf, 1);
+    }
 }
 
 void zish_register_interrupt_handler(void)
