@@ -1,14 +1,14 @@
 #include "builtins.h"
 
-#include "aliases.h"
-#include "execute.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <unistd.h>
+
+#include "aliases.h"
+#include "execute.h"
 
 /**
  * Builtin: change into a directory
@@ -68,7 +68,7 @@ static enum status_code zish_cd(size_t argc, char *argv[argc])
     }
 
     if (chdir(dir) != 0) {
-        perror("zish");
+        perror("zish: chdir()");
         free(dir);
         return STAT_FAILURE;
     }
@@ -127,7 +127,7 @@ enum status_code zish_define_alias(size_t argc, char *argv[argc])
 
     struct alias *new_alias = malloc(sizeof(*new_alias));
     if (!new_alias) {
-        perror("malloc");
+        perror("zish: malloc()");
         return STAT_FAILURE;
     }
 
@@ -136,7 +136,7 @@ enum status_code zish_define_alias(size_t argc, char *argv[argc])
 
     struct alias **new_aliases = realloc(aliases, (i + 2) * sizeof(struct alias));
     if (!aliases) {
-        perror("realloc");
+        perror("zish: realloc()");
         free(new_alias);
         return STAT_FAILURE;
     }
@@ -157,7 +157,7 @@ static enum status_code zish_assign_variable(size_t argc, char *argv[argc])
     }
 
     if (setenv(argv[1], argv[2], true) == -1) {
-        perror("setenv");
+        perror("zish: setenv()");
         return STAT_FAILURE;
     }
 
