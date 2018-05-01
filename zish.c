@@ -1,19 +1,16 @@
-#include "builtins.h"
-#include "interrupt_handler.h"
-#include "execute.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#include <readline/readline.h>
 #include <readline/history.h>
+
+#include "builtins.h"
+#include "interrupt_handler.h"
+#include "execute.h"
+
 
 /**
  * Initializes everything needed
@@ -58,7 +55,7 @@ static void zish_initialize(void)
         setenv("PS1", "$ ", false);
 
     char *home_path = getenv("HOME");
-    int home_path_size = strlen(home_path);
+    size_t home_path_size = strlen(home_path);
 
     history_full_path = malloc((home_path_size + strlen(history_file) + 2) * sizeof(*history_full_path));
     strcpy(history_full_path, home_path);
@@ -75,7 +72,7 @@ static void zish_initialize(void)
 
     free(config_full_path);
 
-    srand(time(NULL));
+    srand((unsigned int)(time(NULL)));
 
     aliases = calloc(1, sizeof(*aliases));
 }
@@ -95,11 +92,11 @@ static void zish_cleanup(void)
 
 static void zish_touch(const char *path)
 {
-    int fd = open(path, O_RDWR | O_CREAT | O_NONBLOCK | O_NOCTTY, 0666);
-    if (fd < 0) {
-        fprintf(stderr, "zish: Can't open history file.\n");
+    FILE *f = fopen(path, "a");
+    if (f == NULL) {
+        fprintf(stderr, "zish: fopen(%s): \"%s\"\n", path, strerror(errno));
         exit(EXIT_FAILURE);
     }
-    close(fd);
+    fclose(f);
 }
 
