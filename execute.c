@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <errno.h>
+
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -18,7 +20,7 @@
 *
 * @returns pointer to the char* array
 */
-static char **zish_split_line(char *line, int *num_args);
+static char **zish_split_line(char *line, size_t *num_args);
 
 /**
 * Returns the next token in the line, similar to strtok
@@ -32,14 +34,14 @@ static char *zish_linetok(char *line);
 *
 * @returns pointer to the first occurance of c
 */
-static void *zish_rawmemchr(const void *s, int c);
+static void *zish_rawmemchr(void *s, int c);
 
 /**
 * Execute a given command
 *
 * @returns status of the command
 */
-static enum status_code zish_exec(char **args, int num_args);
+static enum status_code zish_exec(size_t num_args, char *args[num_args]);
 
 /**
 * Launches a binary
@@ -72,10 +74,10 @@ void zish_repl(void)
         write_history(history_full_path);
 
 
-        int num_args;
+        size_t num_args;
         args = zish_split_line(line, &num_args);
 
-        status = zish_exec(args, num_args);
+        status = zish_exec(num_args, args);
 
         free(line);
         free(args);
@@ -83,10 +85,10 @@ void zish_repl(void)
 }
 
 #define ZISH_TOKEN_BUFSIZE 64
-static char **zish_split_line(char *line, int *num_args)
+static char **zish_split_line(char *line, size_t *num_args)
 {
-    int    bufsize = ZISH_TOKEN_BUFSIZE;
-    int    pos     = 0;
+    size_t bufsize = ZISH_TOKEN_BUFSIZE;
+    size_t    pos     = 0;
     char **tokens  = malloc(bufsize * sizeof(*tokens));
     char  *token   = NULL;
 
@@ -146,17 +148,17 @@ static char *zish_linetok(char *line)
     return token;
 }
 
-static void *zish_rawmemchr(const void *s, int c)
+static void *zish_rawmemchr(void *s, int c)
 {
-    const char *str = s;
+    char *str = s;
     while (*str != (char)c) {
         ++str;
     }
 
-    return (void*)str;
+    return str;
 }
 
-static enum status_code zish_exec(char **args, int num_args)
+static enum status_code zish_exec(size_t num_args, char *args[num_args])
 {
     for (size_t i = 0; aliases[i]; ++i) {
         if (strcmp(args[0], aliases[i]->name) == 0) {
@@ -180,20 +182,39 @@ static enum status_code zish_launch(char **args)
     int status;
 
     pid = fork();
+    if (pid < 0) {
+        // Error forking
+        perror("zish: fork()");
+        exit(EXIT_FAILURE);
+    }
+
     if (pid == 0) {
         // Child process
         if (execvp(args[0], args) == -1) {
+            fprintf(stderr, "zish: execvp(%s)\n", args[0]);
             perror(args[0]);
             return STAT_FAILURE;
         }
+        /* should not reach:  only returns on error */
+        exit(EXIT_FAILURE);
     } else if (pid < 0) {
         // Error forking
         perror("fork");
     } else {
         // Parent process
+        pid_t err;
         do {
-           waitpid(pid, &status, WUNTRACED);
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+           err = waitpid(pid, &status, WUNTRACED);
+           /* if an waitpid() errored but not because of the parent being
+            * interrupted, print it, but continue trying
+            * TODO:  If parent is interrupted, kill child?
+            */
+           if (err != pid && err != EINTR) {
+               perror("zish: waitpid()");
+               continue;
+           }
+        } while (err != pid || /* status is valid */
+                 (!WIFEXITED(status) && !WIFSIGNALED(status)));
     }
 
     if (status) {

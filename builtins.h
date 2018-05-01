@@ -1,12 +1,14 @@
 #ifndef BUILTINS_H
 #define BUILTINS_H
 
+#include <stdlib.h>
+
 #include "execute.h"
 
 /**
  * Builtin function type
  */
-typedef enum status_code (*builtin_func_t)(int, char**);
+typedef enum status_code (*builtin_func_t)(size_t num_args, char *args[num_args]);
 
 
 /**
@@ -39,13 +41,13 @@ extern struct alias **aliases;
  *
  * @returns status of the command
  */
-extern enum status_code zish_define_alias(int argc, char **argv);
+extern enum status_code zish_define_alias(size_t argc, char *argv[argc]);
 
 /**
  * Builtin: source a file
  *
  * @returns status of the command
  */
-enum status_code zish_source_file(int argc, char **argv);
+enum status_code zish_source_file(size_t argc, char **argv);
 
 #endif /* BUILTINS_H */

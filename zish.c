@@ -58,7 +58,7 @@ static void zish_initialize(void)
         setenv("PS1", "$ ", false);
 
     char *home_path = getenv("HOME");
-    int home_path_size = strlen(home_path);
+    size_t home_path_size = strlen(home_path);
 
     history_full_path = malloc((home_path_size + strlen(history_file) + 2) * sizeof(*history_full_path));
     strcpy(history_full_path, home_path);
@@ -75,7 +75,7 @@ static void zish_initialize(void)
 
     free(config_full_path);
 
-    srand(time(NULL));
+    srand((unsigned int)(time(NULL)));
 
     aliases = calloc(1, sizeof(*aliases));
 }
