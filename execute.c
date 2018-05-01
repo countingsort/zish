@@ -204,17 +204,17 @@ static enum status_code zish_launch(char **args)
         // Parent process
         pid_t err;
         do {
-           err = waitpid(pid, &status, WUNTRACED);
-           /* if an waitpid() errored but not because of the parent being
-            * interrupted, print it, but continue trying
-            * TODO:  If parent is interrupted, kill child?
-            */
-           if (err != pid && err != EINTR) {
-               perror("zish: waitpid()");
-               continue;
-           }
+            err = waitpid(pid, &status, WUNTRACED);
+            /* if an waitpid() errored but not because of the parent being
+             * interrupted, print it, but continue trying
+             * TODO:  If parent is interrupted, kill child?
+             */
+            if (err != pid && err != EINTR) {
+                perror("zish: waitpid()");
+                continue;
+            }
         } while (err != pid || /* status is valid */
-                 (!WIFEXITED(status) && !WIFSIGNALED(status)));
+                (!WIFEXITED(status) && !WIFSIGNALED(status)));
     }
 
     if (status) {
