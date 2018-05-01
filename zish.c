@@ -92,7 +92,7 @@ static void zish_cleanup(void)
 
 static void zish_touch(const char *path)
 {
-    FILE *f = fopen(path, "r+");
+    FILE *f = fopen(path, "a");
     if (f == NULL) {
         fprintf(stderr, "zish: fopen(%s): \"%s\"\n", path, strerror(errno));
         exit(EXIT_FAILURE);
