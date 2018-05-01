@@ -1,8 +1,5 @@
 #include "execute.h"
 
-#include "aliases.h"
-#include "builtins.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -13,6 +10,9 @@
 
 #include <readline/readline.h>
 #include <readline/history.h>
+
+#include "aliases.h"
+#include "builtins.h"
 
 /**
 * Splits a line into different arguments
@@ -89,7 +89,7 @@ static char **zish_split_line(char *line, size_t *num_args)
     char  *token   = NULL;
 
     if (!tokens) {
-        perror("zish");
+        perror("zish: malloc()");
     }
 
     token = zish_linetok(line);
@@ -103,7 +103,7 @@ static char **zish_split_line(char *line, size_t *num_args)
             tokens   = realloc(tokens, bufsize * sizeof(*tokens));
 
             if (!tokens) {
-                perror("zish");
+                perror("zish: realloc()");
                 exit(EXIT_FAILURE);
             }
         }

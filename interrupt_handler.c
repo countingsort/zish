@@ -28,7 +28,7 @@ static void zish_interrupt_handler(int signo)
 void zish_register_interrupt_handler(void)
 {
     if (signal(SIGINT, &zish_interrupt_handler) == SIG_ERR) {
-        perror("zish");
+        perror("zish: signal()");
         exit(EXIT_FAILURE);
     }
 }
