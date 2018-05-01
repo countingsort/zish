@@ -1,8 +1,5 @@
 #include "builtins.h"
 
-#include "aliases.h"
-#include "execute.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,33 +7,36 @@
 
 #include <unistd.h>
 
+#include "aliases.h"
+#include "execute.h"
+
 /**
  * Builtin: change into a directory
  *
  * @returns status of the command
  */
-static enum status_code zish_cd(int argc, char **argv);
+static enum status_code zish_cd(size_t argc, char *argv[argc]);
 
 /**
  * Builtin: print help
  *
  * @returns status of the command
  */
-static enum status_code zish_help(int argc, char **argv);
+static enum status_code zish_help(size_t argc, char *argv[argc]);
 
 /**
  * Builtin: exit the shell
  *
  * @returns STAT_EXIT
  */
-static enum status_code zish_exit(int argc, char **argv);
+static enum status_code zish_exit(size_t argc, char *argv[argc]);
 
 /**
  * Builtin: assigns a value to a variable
  *
  * @returns status of the command
  */
-static enum status_code zish_assign_variable(int argc, char **argv);
+static enum status_code zish_assign_variable(size_t argc, char *argv[argc]);
 
 char *builtin_str[ZISH_NUM_BUILTINS] = {
     "cd",
@@ -58,7 +58,7 @@ builtin_func_t builtin_func[ZISH_NUM_BUILTINS] = {
 
 struct alias **aliases;
 
-static enum status_code zish_cd(int argc, char **argv)
+static enum status_code zish_cd(size_t argc, char *argv[argc])
 {
     char *dir = NULL;
     if (argc < 2) {
@@ -68,7 +68,7 @@ static enum status_code zish_cd(int argc, char **argv)
     }
 
     if (chdir(dir) != 0) {
-        perror("zish");
+        perror("zish: chdir()");
         free(dir);
         return STAT_FAILURE;
     }
@@ -78,7 +78,7 @@ static enum status_code zish_cd(int argc, char **argv)
     return STAT_SUCCESS;
 }
 
-static enum status_code zish_help(int argc, char **argv)
+static enum status_code zish_help(size_t argc, char *argv[argc])
 {
     (void)argc;
     (void)argv;
@@ -99,7 +99,7 @@ static enum status_code zish_help(int argc, char **argv)
     return STAT_SUCCESS;
 }
 
-static enum status_code zish_exit(int argc, char **argv)
+static enum status_code zish_exit(size_t argc, char *argv[argc])
 {
     (void)argc;
     (void)argv;
@@ -108,7 +108,7 @@ static enum status_code zish_exit(int argc, char **argv)
     return STAT_EXIT;
 }
 
-enum status_code zish_define_alias(int argc, char **argv)
+enum status_code zish_define_alias(size_t argc, char *argv[argc])
 {
     if (argc < 3) {
         fprintf(stderr, "zish: expected 2 arguments to `alias`\n");
@@ -127,7 +127,7 @@ enum status_code zish_define_alias(int argc, char **argv)
 
     struct alias *new_alias = malloc(sizeof(*new_alias));
     if (!new_alias) {
-        perror("malloc");
+        perror("zish: malloc()");
         return STAT_FAILURE;
     }
 
@@ -136,7 +136,7 @@ enum status_code zish_define_alias(int argc, char **argv)
 
     struct alias **new_aliases = realloc(aliases, (i + 2) * sizeof(struct alias));
     if (!aliases) {
-        perror("realloc");
+        perror("zish: realloc()");
         free(new_alias);
         return STAT_FAILURE;
     }
@@ -149,7 +149,7 @@ enum status_code zish_define_alias(int argc, char **argv)
     return STAT_SUCCESS;
 }
 
-static enum status_code zish_assign_variable(int argc, char **argv)
+static enum status_code zish_assign_variable(size_t argc, char *argv[argc])
 {
     if (argc < 3) {
         fprintf(stderr, "zish: expected 2 arguments to let\n");
@@ -157,14 +157,14 @@ static enum status_code zish_assign_variable(int argc, char **argv)
     }
 
     if (setenv(argv[1], argv[2], true) == -1) {
-        perror("setenv");
+        perror("zish: setenv()");
         return STAT_FAILURE;
     }
 
     return STAT_SUCCESS;
 }
 
-enum status_code zish_source_file(int argc, char **argv)
+enum status_code zish_source_file(size_t argc, char *argv[argc])
 {
     (void)argc;
     (void)argv;
