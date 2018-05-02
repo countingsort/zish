@@ -197,9 +197,6 @@ static enum status_code zish_launch(char **args)
         }
         /* should not reach:  only returns on error */
         exit(EXIT_FAILURE);
-    } else if (pid < 0) {
-        // Error forking
-        perror("fork");
     } else {
         // Parent process
         pid_t err;
