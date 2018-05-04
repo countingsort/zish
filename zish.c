@@ -99,3 +99,4 @@ static void zish_touch(const char *path)
     }
     fclose(f);
 }
+

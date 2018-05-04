@@ -171,3 +171,4 @@ enum status_code zish_source_file(size_t argc, char *argv[argc])
     fprintf(stderr, "zish: source isn't implemented yet\n");
     return EXIT_FAILURE;
 }
+
