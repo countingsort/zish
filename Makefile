@@ -1,6 +1,6 @@
 CC ?= gcc
 CPPFLAGS=-D_POSIX_C_SOURCE=200809L
-CFLAGS=-std=c11
+CFLAGS=-std=c11 -O2
 ifeq ($(CC), clang)
 	CFLAGS += -Weverything -pedantic -Wno-vla
 else

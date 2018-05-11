@@ -85,7 +85,6 @@ static enum status_code zish_help(size_t argc, char *argv[argc])
 
     printf(
         "zish is a shell\n"
-        "(c) Ahmet Alkan Akarsu and Niclas Meyer\n\n"
         "Twype the pwogwam name and then pwess enter, onii-chan. (^._.^)~\n"
         "Builtwins:\n"
     );
