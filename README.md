@@ -2,6 +2,11 @@
 
 zish is a shell (pronounced [ˈʦɪʃ])
 
+## IMPORTANT
+
+Note that this project is *deprecated*.  
+Not because it's barely usable (I'd have to admit that I did something bad), but because it's not named after food.
+
 ## Installation
 
 `make` and put it somewhere safe
